@@ -1,0 +1,14 @@
+{
+  "name": "workspace-hub-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard for managing dev servers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "htmx.org": "^1.9.10"
+  }
+}

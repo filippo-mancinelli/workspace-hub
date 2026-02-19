@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workspace Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #334155;
+    }
+    h1 { font-size: 1.5rem; color: #38bdf8; }
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .status-online { background: #166534; color: #86efac; }
+    .status-offline { background: #7f1d1d; color: #fca5a5; }
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .project-card {
+      background: #1e293b;
+      border-radius: 0.5rem;
+      padding: 1.25rem;
+      border: 1px solid #334155;
+    }
+    .project-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 1rem;
+    }
+    .project-name { font-size: 1.125rem; font-weight: 600; }
+    .project-status {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      text-transform: uppercase;
+    }
+    .status-running { background: #166534; color: #86efac; }
+    .status-stopped { background: #374151; color: #9ca3af; }
+    .status-error { background: #7f1d1d; color: #fca5a5; }
+    .project-info {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+    .project-info p { margin-bottom: 0.25rem; }
+    .project-url {
+      display: block;
+      color: #38bdf8;
+      text-decoration: none;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+    .project-url:hover { text-decoration: underline; }
+    .project-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      border: none;
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-start { background: #166534; color: #fff; }
+    .btn-stop { background: #7f1d1d; color: #fff; }
+    .btn-restart { background: #854d0e; color: #fff; }
+    .btn-logs { background: #1e40af; color: #fff; }
+    .logs-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      padding: 1rem;
+      z-index: 100;
+    }
+    .logs-modal.active { display: flex; justify-content: center; align-items: center; }
+    .logs-content {
+      background: #1e293b;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow: auto;
+      width: 800px;
+    }
+    .logs-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .logs-text {
+      font-family: monospace;
+      font-size: 0.75rem;
+      white-space: pre-wrap;
+      background: #0f172a;
+      padding: 1rem;
+      border-radius: 0.25rem;
+      overflow: auto;
+      max-height: 60vh;
+    }
+    .close-btn {
+      background: transparent;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    .refresh-btn {
+      background: #334155;
+      color: #e2e8f0;
+      margin-left: 1rem;
+    }
+    @media (max-width: 640px) {
+      .project-actions { flex-direction: column; }
+      .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Workspace Hub</h1>
+      <button class="btn refresh-btn" onclick="loadProjects()">Refresh</button>
+    </header>
+    <div id="projects" class="projects-grid">Loading...</div>
+  </div>
+
+  <div id="logsModal" class="logs-modal">
+    <div class="logs-content">
+      <div class="logs-header">
+        <h3 id="logsTitle">Logs</h3>
+        <button class="close-btn" onclick="closeLogs()">Close</button>
+      </div>
+      <pre id="logsText" class="logs-text"></pre>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script>
+    let projects = [];
+
+    async function loadProjects() {
+      try {
+        const res = await fetch('/api/projects');
+        projects = await res.json();
+        renderProjects();
+      } catch (err) {
+        document.getElementById('projects').innerHTML = 
+          '<p style="color:#f87171">Failed to load projects. Is the server running?</p>';
+      }
+    }
+
+    function renderProjects() {
+      const container = document.getElementById('projects');
+      
+      if (projects.length === 0) {
+        container.innerHTML = '<p>No projects configured. Edit config/projects.json</p>';
+        return;
+      }
+
+      container.innerHTML = projects.map(p => `
+        <div class="project-card">
+          <div class="project-header">
+            <span class="project-name">${p.name}</span>
+            <span class="project-status status-${p.status}">${p.status}</span>
+          </div>
+          <div class="project-info">
+            <p>Port: ${p.port}</p>
+            <p>Path: ${p.path}</p>
+          </div>
+          <a href="https://${p.domain}" target="_blank" class="project-url">
+            https://${p.domain}
+          </a>
+          <div class="project-actions">
+            ${p.status === 'running' ? `
+              <button class="btn btn-stop" onclick="stopProject('${p.name}')">Stop</button>
+              <button class="btn btn-restart" onclick="restartProject('${p.name}')">Restart</button>
+            ` : `
+              <button class="btn btn-start" onclick="startProject('${p.name}')">Start</button>
+            `}
+            <button class="btn btn-logs" onclick="showLogs('${p.name}')">Logs</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function startProject(name) {
+      await fetch(`/api/projects/${name}/start`, { method: 'POST' });
+      setTimeout(loadProjects, 1000);
+    }
+
+    async function stopProject(name) {
+      await fetch(`/api/projects/${name}/stop`, { method: 'POST' });
+      setTimeout(loadProjects, 500);
+    }
+
+    async function restartProject(name) {
+      await fetch(`/api/projects/${name}/restart`, { method: 'POST' });
+      setTimeout(loadProjects, 1000);
+    }
+
+    async function showLogs(name) {
+      const res = await fetch(`/api/projects/${name}/logs?lines=200`);
+      const logs = await res.text();
+      document.getElementById('logsTitle').textContent = `${name} - Logs`;
+      document.getElementById('logsText').textContent = logs;
+      document.getElementById('logsModal').classList.add('active');
+    }
+
+    function closeLogs() {
+      document.getElementById('logsModal').classList.remove('active');
+    }
+
+    // Initial load
+    loadProjects();
+
+    // Auto-refresh every 10 seconds
+    setInterval(loadProjects, 10000);
+  </script>
+</body>
+</html>

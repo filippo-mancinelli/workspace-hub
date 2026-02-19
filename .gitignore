@@ -1,0 +1,6 @@
+node_modules/
+config/projects.json
+config/caddy.json
+*.log
+.DS_Store
+.env

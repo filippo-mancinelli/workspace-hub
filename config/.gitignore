@@ -1,0 +1,4 @@
+# Keep example, ignore user config
+projects.json
+caddy.json
+.env

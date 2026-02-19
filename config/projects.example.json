@@ -1,0 +1,37 @@
+{
+  "projects": [
+    {
+      "name": "my-backend",
+      "path": "/home/YOUR_USER/dev/my-backend",
+      "command": "npm run dev",
+      "port": 3000,
+      "domain": "dev-backend.yourdomain.com",
+      "enabled": true,
+      "type": "node"
+    },
+    {
+      "name": "my-frontend",
+      "path": "/home/YOUR_USER/dev/my-frontend",
+      "command": "npm run dev -- --host 0.0.0.0 --port 3001",
+      "port": 3001,
+      "domain": "dev-frontend.yourdomain.com",
+      "enabled": true,
+      "type": "node"
+    },
+    {
+      "name": "my-python-api",
+      "path": "/home/YOUR_USER/dev/my-python-api",
+      "command": "uvicorn main:app --reload --host 0.0.0.0 --port 3002",
+      "port": 3002,
+      "domain": "dev-api.yourdomain.com",
+      "enabled": false,
+      "type": "python"
+    }
+  ],
+  "settings": {
+    "dashboardPort": 9000,
+    "dashboardDomain": "hub.yourdomain.com",
+    "traefikDynamicDir": "/etc/dokploy/traefik/dynamic",
+    "logDir": "/var/log/workspace-hub"
+  }
+}
