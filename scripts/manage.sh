@@ -25,7 +25,7 @@ get_projects() {
     cat "$CONFIG_FILE" | node -e "
       const fs = require('fs');
       const config = JSON.parse(fs.readFileSync('/dev/stdin', 'utf8'));
-      config.projects.forEach(p => console.log(p.name + '|' + p.path + '|' + p.command + '|' + (p.enabled !== false)));
+      config.projects.forEach(p => console.log(p.name + '|' + p.path + '|' + p.command + '|' + (p.enabled !== false) + '|' + (p.maxMemory || '') + '|' + (p.maxCpu || '')));
     "
   fi
 }
@@ -34,12 +34,19 @@ case "$1" in
   list)
     echo "Projects Status:"
     echo "================"
-    get_projects | while IFS='|' read -r name path command enabled; do
+    get_projects | while IFS='|' read -r name path command enabled maxMemory maxCpu; do
       status=$(pm2 describe "$name" 2>/dev/null | grep 'status' | awk '{print $4}' || echo "stopped")
       if [ "$enabled" = "false" ]; then
         status="disabled"
       fi
-      printf "%-20s %s\n" "$name" "$status"
+      limits=""
+      if [ -n "$maxMemory" ] || [ -n "$maxCpu" ]; then
+        limits=" ("
+        [ -n "$maxCpu" ] && limits="${limits}CPU: $maxCpu, "
+        [ -n "$maxMemory" ] && limits="${limits}MEM: $maxMemory, "
+        limits="${limits%, })"
+      fi
+      printf "%-20s %s%s\n" "$name" "$status" "$limits"
     done
     echo ""
     echo "Run '$0 logs <name>' to view logs"
@@ -51,19 +58,31 @@ case "$1" in
       usage
       exit 1
     fi
-    
+
     # Get project config
     project=$(get_projects | grep "^$2|")
     if [ -z "$project" ]; then
       echo "Error: project '$2' not found in config"
       exit 1
     fi
-    
-    IFS='|' read -r name path command enabled <<< "$project"
-    
+
+    IFS='|' read -r name path command enabled maxMemory maxCpu <<< "$project"
+
     echo "Starting $name..."
     cd "$path"
-    pm2 start "$command" --name "$name" --cwd "$path"
+
+    # Wrap command with systemd-run if CPU limit is set
+    if [ -n "$maxCpu" ]; then
+      command="systemd-run --user --scope --property=CPUQuota=$maxCpu -- $command"
+    fi
+
+    # Build PM2 args
+    PM2_ARGS="--name $name --cwd $path --no-autorestart"
+    if [ -n "$maxMemory" ]; then
+      PM2_ARGS="$PM2_ARGS --max-memory-restart $maxMemory"
+    fi
+
+    pm2 start "$command" $PM2_ARGS
     echo "Started $name"
     ;;
 
@@ -99,11 +118,23 @@ case "$1" in
 
   start-all)
     echo "Starting all enabled projects..."
-    get_projects | while IFS='|' read -r name path command enabled; do
+    get_projects | while IFS='|' read -r name path command enabled maxMemory maxCpu; do
       if [ "$enabled" = "true" ]; then
         echo "Starting $name..."
         cd "$path" 2>/dev/null || { echo "Warning: path $path not found, skipping"; continue; }
-        pm2 start "$command" --name "$name" --cwd "$path" 2>/dev/null || echo "Failed to start $name"
+
+        # Wrap command with systemd-run if CPU limit is set
+        if [ -n "$maxCpu" ]; then
+          command="systemd-run --user --scope --property=CPUQuota=$maxCpu -- $command"
+        fi
+
+        # Build PM2 args
+        PM2_ARGS="--name $name --cwd $path --no-autorestart"
+        if [ -n "$maxMemory" ]; then
+          PM2_ARGS="$PM2_ARGS --max-memory-restart $maxMemory"
+        fi
+
+        pm2 start "$command" $PM2_ARGS 2>/dev/null || echo "Failed to start $name"
       fi
     done
     echo ""
@@ -112,7 +143,7 @@ case "$1" in
 
   stop-all)
     echo "Stopping all projects..."
-    get_projects | while IFS='|' read -r name path command enabled; do
+    get_projects | while IFS='|' read -r name path command enabled maxMemory maxCpu; do
       pm2 stop "$name" 2>/dev/null || true
     done
     echo "All projects stopped"

@@ -1,37 +1,39 @@
 {
   "projects": [
     {
-      "name": "my-backend",
-      "path": "/home/YOUR_USER/dev/my-backend",
-      "command": "npm run dev",
+      "name": "my-vite-app",
+      "path": "/home/YOUR_USER/dev/my-vite-app",
+      "command": "npx vite --host 0.0.0.0 --port 3000",
       "port": 3000,
-      "domain": "dev-backend.yourdomain.com",
+      "domain": "dev-vite.example.com",
       "enabled": true,
-      "type": "node"
+      "maxMemory": "512M",
+      "maxCpu": "50%"
     },
     {
-      "name": "my-frontend",
-      "path": "/home/YOUR_USER/dev/my-frontend",
-      "command": "npm run dev -- --host 0.0.0.0 --port 3001",
+      "name": "my-nextjs-app",
+      "path": "/home/YOUR_USER/dev/my-nextjs-app",
+      "command": "HOSTNAME=0.0.0.0 npx next dev --port 3001",
       "port": 3001,
-      "domain": "dev-frontend.yourdomain.com",
+      "domain": "dev-next.example.com",
       "enabled": true,
-      "type": "node"
+      "maxMemory": "1G",
+      "maxCpu": "100%"
     },
     {
-      "name": "my-python-api",
-      "path": "/home/YOUR_USER/dev/my-python-api",
+      "name": "my-fastapi",
+      "path": "/home/YOUR_USER/dev/my-fastapi",
       "command": "uvicorn main:app --reload --host 0.0.0.0 --port 3002",
       "port": 3002,
-      "domain": "dev-api.yourdomain.com",
+      "domain": "dev-api.example.com",
       "enabled": false,
-      "type": "python"
+      "maxMemory": "256M",
+      "maxCpu": "25%"
     }
   ],
   "settings": {
     "dashboardPort": 9000,
-    "dashboardDomain": "hub.yourdomain.com",
-    "traefikDynamicDir": "/etc/dokploy/traefik/dynamic",
-    "logDir": "/var/log/workspace-hub"
+    "dashboardDomain": "hub.example.com",
+    "traefikDynamicDir": "/etc/dokploy/traefik/dynamic"
   }
 }

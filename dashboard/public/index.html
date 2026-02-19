@@ -4,10 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Workspace Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
       min-height: 100vh;
@@ -61,12 +64,59 @@
     .status-running { background: #166534; color: #86efac; }
     .status-stopped { background: #374151; color: #9ca3af; }
     .status-error { background: #7f1d1d; color: #fca5a5; }
+    .status-restarting { background: #854d0e; color: #fef08a; }
     .project-info {
       font-size: 0.875rem;
       color: #94a3b8;
       margin-bottom: 1rem;
     }
-    .project-info p { margin-bottom: 0.25rem; }
+    .project-info p { margin-bottom: 0.25rem; display: flex; justify-content: space-between; }
+    .project-info .value { color: #e2e8f0; }
+    .project-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: #0f172a;
+      border-radius: 0.375rem;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1rem; font-weight: 600; color: #38bdf8; }
+    .stat-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; }
+    .restart-badge {
+      background: #854d0e;
+      color: #fef08a;
+      font-size: 0.65rem;
+      padding: 0.1rem 0.3rem;
+      border-radius: 0.25rem;
+      margin-left: 0.5rem;
+    }
+    .header-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .search-input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      width: 200px;
+    }
+    .search-input:focus { outline: none; border-color: #38bdf8; }
+    .btn-danger { background: #7f1d1d; color: #fff; }
+    .btn-warning { background: #854d0e; color: #fff; }
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+    .checkbox-container input { width: 1rem; height: 1rem; }
     .project-url {
       display: block;
       color: #38bdf8;
@@ -95,6 +145,54 @@
     .btn-stop { background: #7f1d1d; color: #fff; }
     .btn-restart { background: #854d0e; color: #fff; }
     .btn-logs { background: #1e40af; color: #fff; }
+    .btn-copy { background: #334155; color: #e2e8f0; }
+    .btn.loading { position: relative; color: transparent !important; pointer-events: none; }
+    .btn.loading::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      margin-left: -8px;
+      margin-top: -8px;
+      width: 16px;
+      height: 16px;
+      border: 2px solid transparent;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 200px;
+    }
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid #334155;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-size: 0.875rem;
+      z-index: 200;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .toast.success { background: #166534; color: #86efac; }
+    .toast.error { background: #7f1d1d; color: #fca5a5; }
+    .toast.info { background: #1e40af; color: #93c5fd; }
     .logs-modal {
       display: none;
       position: fixed;
@@ -116,7 +214,13 @@
     .logs-header {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       margin-bottom: 1rem;
+    }
+    .logs-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
     .logs-text {
       font-family: monospace;
@@ -145,22 +249,107 @@
       .project-actions { flex-direction: column; }
       .btn { width: 100%; text-align: center; }
     }
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+      }
+      h1 { text-align: center; margin-bottom: 0.5rem; }
+      .header-actions {
+        flex-direction: column;
+        width: 100%;
+      }
+      .search-input {
+        width: 100%;
+      }
+      .header-actions .btn {
+        width: 100%;
+      }
+      .refresh-btn {
+        margin-left: 0;
+      }
+      .projects-grid {
+        grid-template-columns: 1fr;
+      }
+      .project-stats {
+        gap: 0.25rem;
+        padding: 0.5rem;
+      }
+      .stat-value { font-size: 0.875rem; }
+      .stat-label { font-size: 0.6rem; }
+      .logs-content {
+        width: 100%;
+        max-width: 100%;
+        padding: 0.75rem;
+      }
+      .logs-header {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: stretch;
+      }
+      .logs-header-left {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .logs-header-left h3 {
+        width: 100%;
+        text-align: center;
+      }
+      .close-btn {
+        width: 100%;
+        padding: 0.5rem;
+      }
+      .project-info p {
+        flex-direction: column;
+        gap: 0.125rem;
+      }
+      .project-name {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+      .restart-badge {
+        margin-left: 0;
+      }
+      .toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <h1>Workspace Hub</h1>
-      <button class="btn refresh-btn" onclick="loadProjects()">Refresh</button>
+      <div class="header-actions">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search projects..." oninput="filterProjects()">
+        <button class="btn btn-danger" onclick="stopAll()">Stop All</button>
+        <button class="btn btn-warning" onclick="restartAll()">Restart All</button>
+        <button class="btn refresh-btn" onclick="loadProjects(true)">Refresh</button>
+      </div>
     </header>
-    <div id="projects" class="projects-grid">Loading...</div>
+    <div id="projects" class="projects-grid"><div class="loading-container"><div class="spinner"></div></div></div>
   </div>
 
   <div id="logsModal" class="logs-modal">
     <div class="logs-content">
       <div class="logs-header">
-        <h3 id="logsTitle">Logs</h3>
+        <div class="logs-header-left">
+          <h3 id="logsTitle">Logs</h3>
+          <button id="copyLogsBtn" class="btn btn-copy" onclick="copyLogs()">Copy</button>
+          <label class="checkbox-container">
+            <input type="checkbox" id="autoRefreshLogs" onchange="toggleAutoRefresh()">
+            <span>Auto-refresh</span>
+          </label>
+        </div>
         <button class="close-btn" onclick="closeLogs()">Close</button>
+      </div>
+      <div id="logsLoading" class="loading-container" style="display:none;">
+        <div class="spinner"></div>
       </div>
       <pre id="logsText" class="logs-text"></pre>
     </div>
@@ -169,84 +358,340 @@
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script>
     let projects = [];
+    let pendingActions = new Set();
+    let isLoadingProjects = false;
+    let logsInterval = null;
+    let currentLogsProject = null;
+    let eventSource = null;
+    let restartCounts = {};
 
-    async function loadProjects() {
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function formatUptime(uptime) {
+      if (!uptime) return '-';
+      const diff = Date.now() - uptime;
+      const secs = Math.floor(diff / 1000);
+      const mins = Math.floor(secs / 60);
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+      if (days > 0) return `${days}d ${hours % 24}h`;
+      if (hours > 0) return `${hours}h ${mins % 60}m`;
+      if (mins > 0) return `${mins}m`;
+      return `${secs}s`;
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '0B';
+      const mb = bytes / 1024 / 1024;
+      if (mb >= 1024) return `${(mb / 1024).toFixed(1)}GB`;
+      return `${mb.toFixed(0)}MB`;
+    }
+
+    function showLoadingSpinner() {
+      document.getElementById('projects').innerHTML = '<div class="loading-container"><div class="spinner"></div></div>';
+    }
+
+    async function loadProjects(showSpinner = false) {
+      if (showSpinner) {
+        showLoadingSpinner();
+        document.querySelector('.refresh-btn').classList.add('loading');
+      }
+      isLoadingProjects = true;
       try {
         const res = await fetch('/api/projects');
         projects = await res.json();
+        // Track restarts for crash alerts
+        projects.forEach(p => {
+          if (restartCounts[p.name] !== undefined && p.restarts > restartCounts[p.name]) {
+            showToast(`${p.name} restarted (crashed?)`, 'error');
+          }
+          restartCounts[p.name] = p.restarts;
+        });
         renderProjects();
       } catch (err) {
-        document.getElementById('projects').innerHTML = 
+        document.getElementById('projects').innerHTML =
           '<p style="color:#f87171">Failed to load projects. Is the server running?</p>';
+      } finally {
+        document.querySelector('.refresh-btn').classList.remove('loading');
+        isLoadingProjects = false;
       }
     }
 
-    function renderProjects() {
+    function filterProjects() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = projects.filter(p => 
+        p.name.toLowerCase().includes(search) ||
+        p.domain.toLowerCase().includes(search)
+      );
+      renderProjects(filtered);
+    }
+
+    function renderProjects(list = projects) {
       const container = document.getElementById('projects');
-      
-      if (projects.length === 0) {
-        container.innerHTML = '<p>No projects configured. Edit config/projects.json</p>';
+
+      if (list.length === 0) {
+        container.innerHTML = '<p>No projects found.</p>';
         return;
       }
 
-      container.innerHTML = projects.map(p => `
+      container.innerHTML = list.map(p => {
+        const isLoading = pendingActions.has(p.name);
+        const hasRestarts = p.restarts > 0;
+        return `
         <div class="project-card">
           <div class="project-header">
-            <span class="project-name">${p.name}</span>
+            <span class="project-name">${p.name}${hasRestarts ? `<span class="restart-badge">${p.restarts} restarts</span>` : ''}</span>
             <span class="project-status status-${p.status}">${p.status}</span>
           </div>
+          <div class="project-stats">
+            <div class="stat">
+              <div class="stat-value">${p.cpu !== undefined ? p.cpu + '%' : '-'}</div>
+              <div class="stat-label">CPU</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value">${formatBytes(p.memory)}</div>
+              <div class="stat-label">Memory</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value">${formatUptime(p.uptime)}</div>
+              <div class="stat-label">Uptime</div>
+            </div>
+          </div>
           <div class="project-info">
-            <p>Port: ${p.port}</p>
-            <p>Path: ${p.path}</p>
+            <p><span>Port:</span><span class="value">${p.port}</span></p>
+            <p><span>Path:</span><span class="value">${p.path}</span></p>
+            <p><span>CPU limit:</span><span class="value">${p.maxCpu || 'none'}</span></p>
+            <p><span>Memory limit:</span><span class="value">${p.maxMemory || 'none'}</span></p>
           </div>
           <a href="https://${p.domain}" target="_blank" class="project-url">
             https://${p.domain}
           </a>
           <div class="project-actions">
-            ${p.status === 'running' ? `
-              <button class="btn btn-stop" onclick="stopProject('${p.name}')">Stop</button>
-              <button class="btn btn-restart" onclick="restartProject('${p.name}')">Restart</button>
+            ${p.status === 'online' || p.status === 'running' ? `
+              <button class="btn btn-stop ${isLoading ? 'loading' : ''}" onclick="stopProject('${p.name}')" ${isLoading ? 'disabled' : ''}>Stop</button>
+              <button class="btn btn-restart ${isLoading ? 'loading' : ''}" onclick="restartProject('${p.name}')" ${isLoading ? 'disabled' : ''}>Restart</button>
             ` : `
-              <button class="btn btn-start" onclick="startProject('${p.name}')">Start</button>
+              <button class="btn btn-start ${isLoading ? 'loading' : ''}" onclick="startProject('${p.name}')" ${isLoading ? 'disabled' : ''}>Start</button>
             `}
-            <button class="btn btn-logs" onclick="showLogs('${p.name}')">Logs</button>
+            <button class="btn btn-logs" onclick="showLogs('${p.name}')" ${isLoading ? 'disabled' : ''}>Logs</button>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     async function startProject(name) {
-      await fetch(`/api/projects/${name}/start`, { method: 'POST' });
-      setTimeout(loadProjects, 1000);
+      pendingActions.add(name);
+      renderProjects();
+      try {
+        const res = await fetch(`/api/projects/${name}/start`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          showToast(`Failed to start: ${data.error}`, 'error');
+        } else {
+          showToast(`Starting ${name}...`, 'info');
+          // Open logs with auto-refresh after starting
+          showLogs(name, true);
+        }
+      } catch (err) {
+        showToast(`Failed to start: ${err.message}`, 'error');
+      }
+      setTimeout(() => {
+        pendingActions.delete(name);
+        loadProjects();
+      }, 2000);
     }
 
     async function stopProject(name) {
-      await fetch(`/api/projects/${name}/stop`, { method: 'POST' });
-      setTimeout(loadProjects, 500);
+      pendingActions.add(name);
+      renderProjects();
+      try {
+        const res = await fetch(`/api/projects/${name}/stop`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          showToast(`Failed to stop: ${data.error}`, 'error');
+        } else {
+          showToast(`Stopped ${name}`, 'success');
+        }
+      } catch (err) {
+        showToast(`Failed to stop: ${err.message}`, 'error');
+      }
+      setTimeout(() => {
+        pendingActions.delete(name);
+        loadProjects();
+      }, 500);
     }
 
     async function restartProject(name) {
-      await fetch(`/api/projects/${name}/restart`, { method: 'POST' });
-      setTimeout(loadProjects, 1000);
+      pendingActions.add(name);
+      renderProjects();
+      try {
+        const res = await fetch(`/api/projects/${name}/restart`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          showToast(`Failed to restart: ${data.error}`, 'error');
+        } else {
+          showToast(`Restarting ${name}...`, 'info');
+        }
+      } catch (err) {
+        showToast(`Failed to restart: ${err.message}`, 'error');
+      }
+      setTimeout(() => {
+        pendingActions.delete(name);
+        loadProjects();
+      }, 2000);
     }
 
-    async function showLogs(name) {
-      const res = await fetch(`/api/projects/${name}/logs?lines=200`);
-      const logs = await res.text();
+    async function showLogs(name, autoRefresh = false) {
+      currentLogsProject = name;
       document.getElementById('logsTitle').textContent = `${name} - Logs`;
-      document.getElementById('logsText').textContent = logs;
+      document.getElementById('logsText').textContent = '';
+      document.getElementById('logsLoading').style.display = 'flex';
       document.getElementById('logsModal').classList.add('active');
+
+      // Enable auto-refresh if requested
+      if (autoRefresh) {
+        document.getElementById('autoRefreshLogs').checked = true;
+        logsInterval = setInterval(() => refreshLogs(), 2000);
+      }
+
+      try {
+        const res = await fetch(`/api/projects/${name}/logs?lines=200`);
+        const logs = await res.text();
+        document.getElementById('logsLoading').style.display = 'none';
+        document.getElementById('logsText').textContent = logs || 'No logs available';
+      } catch (err) {
+        document.getElementById('logsLoading').style.display = 'none';
+        showToast(`Failed to load logs: ${err.message}`, 'error');
+      }
+    }
+
+    function toggleAutoRefresh() {
+      const checked = document.getElementById('autoRefreshLogs').checked;
+      // Clear existing interval first
+      if (logsInterval) {
+        clearInterval(logsInterval);
+        logsInterval = null;
+      }
+      if (checked && currentLogsProject) {
+        logsInterval = setInterval(() => refreshLogs(), 2000);
+      }
+    }
+
+    async function refreshLogs() {
+      if (!currentLogsProject) return;
+      try {
+        const res = await fetch(`/api/projects/${currentLogsProject}/logs?lines=200`);
+        const logs = await res.text();
+        const logsEl = document.getElementById('logsText');
+        logsEl.textContent = logs || 'No logs available';
+        logsEl.scrollTop = logsEl.scrollHeight;
+      } catch (err) {}
+    }
+
+    async function copyLogs() {
+      const logsText = document.getElementById('logsText').textContent;
+      const btn = document.getElementById('copyLogsBtn');
+      try {
+        await navigator.clipboard.writeText(logsText);
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 2000);
+      } catch (err) {
+        showToast('Failed to copy logs', 'error');
+      }
     }
 
     function closeLogs() {
       document.getElementById('logsModal').classList.remove('active');
+      document.getElementById('autoRefreshLogs').checked = false;
+      document.getElementById('logsLoading').style.display = 'none';
+      document.getElementById('logsText').textContent = '';
+      clearInterval(logsInterval);
+      logsInterval = null;
+      currentLogsProject = null;
     }
 
-    // Initial load
-    loadProjects();
+    async function stopAll() {
+      if (!confirm('Stop all projects?')) return;
+      const btn = document.querySelector('.btn-danger');
+      btn.classList.add('loading');
+      try {
+        const res = await fetch('/api/projects/stop-all', { method: 'POST' });
+        const data = await res.json();
+        const failed = data.results.filter(r => !r.success);
+        if (failed.length > 0) {
+          showToast(`Stopped ${data.results.length - failed.length}, ${failed.length} failed`, 'error');
+        } else {
+          showToast(`Stopped all ${data.results.length} projects`, 'success');
+        }
+      } catch (err) {
+        showToast(`Failed: ${err.message}`, 'error');
+      } finally {
+        btn.classList.remove('loading');
+        loadProjects();
+      }
+    }
 
-    // Auto-refresh every 10 seconds
-    setInterval(loadProjects, 10000);
+    async function restartAll() {
+      if (!confirm('Restart all projects?')) return;
+      const btn = document.querySelector('.btn-warning');
+      btn.classList.add('loading');
+      try {
+        const res = await fetch('/api/projects/restart-all', { method: 'POST' });
+        const data = await res.json();
+        const failed = data.results.filter(r => !r.success);
+        if (failed.length > 0) {
+          showToast(`Restarted ${data.results.length - failed.length}, ${failed.length} failed`, 'error');
+        } else {
+          showToast(`Restarting all ${data.results.length} projects`, 'info');
+        }
+      } catch (err) {
+        showToast(`Failed: ${err.message}`, 'error');
+      } finally {
+        btn.classList.remove('loading');
+        loadProjects();
+      }
+    }
+
+    function connectSSE() {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource('/api/events');
+      eventSource.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'restart') {
+          showToast(`${data.name} auto-restarted (crash?)`, 'error');
+        }
+      };
+      eventSource.onerror = () => {
+        setTimeout(connectSSE, 5000);
+      };
+    }
+
+    // Close modal on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLogs();
+    });
+
+    // Initial load
+    loadProjects(true);
+
+    // Initialize restart counts after first load to prevent false alerts
+    setTimeout(() => {
+      projects.forEach(p => {
+        restartCounts[p.name] = p.restarts;
+      });
+    }, 1000);
+
+    // Auto-refresh every 10 seconds (without spinner)
+    setInterval(() => loadProjects(false), 10000);
+
+    // Connect SSE for crash alerts
+    connectSSE();
   </script>
 </body>
 </html>

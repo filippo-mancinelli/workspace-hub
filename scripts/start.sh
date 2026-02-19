@@ -32,7 +32,7 @@ echo "Starting dev servers..."
 echo "Starting dashboard on port $DASHBOARD_PORT..."
 cd "$PROJECT_ROOT/dashboard"
 pm2 delete workspace-hub-dashboard 2>/dev/null || true
-pm2 start server.js --name "workspace-hub-dashboard" -- --dashboard-port "$DASHBOARD_PORT"
+DASHBOARD_PORT="$DASHBOARD_PORT" pm2 start server.js --name "workspace-hub-dashboard"
 
 # Save PM2 processes
 pm2 save
