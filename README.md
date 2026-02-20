@@ -9,24 +9,56 @@ Self-hosted dev environment manager. Keep all your dev servers running with HTTP
 git clone https://github.com/YOUR_USERNAME/workspace-hub.git
 cd workspace-hub
 
-# 2. Setup (installs PM2, creates config)
-./scripts/setup.sh
+# 2. Interactive setup (guides you through everything)
+workspace-hub init
 
-# 3. Configure your projects
-nano config/projects.json
-
-# 4. Start
-./scripts/start.sh
+# 3. Start everything
+workspace-hub start --all
 ```
 
-Open `https://hub.yourdomain.com` to manage all projects.
+That's it! The wizard will ask you questions and set everything up automatically.
+
+## Getting Started Guide
+
+### First time setup
+
+1. **Run the setup wizard:**
+   ```bash
+   workspace-hub init
+   ```
+   The wizard will ask:
+   - Dashboard domain (optional)
+   - Dashboard port
+   - Caddy config directory
+   - ngrok token (optional)
+   - Projects to add
+
+2. **Add your projects** (if not done in wizard):
+   ```bash
+   workspace-hub add
+   ```
+   Select your framework and enter project details.
+
+3. **Generate configs:**
+   ```bash
+   workspace-hub generate
+   ```
+
+4. **Start everything:**
+   ```bash
+   workspace-hub start --all
+   ```
+
+5. **Access your projects:**
+   - Domain mode: `https://your-domain.com`
+   - Tunnel mode: Check with `workspace-hub tunnel list`
 
 ## Installation (npm)
 
 ```bash
 npm install -g workspace-hub
 
-# Initialize configuration
+# Initialize configuration (interactive wizard)
 workspace-hub init
 
 # Start all projects
@@ -37,6 +69,17 @@ workspace-hub dashboard
 ```
 
 ## Configuration
+
+You have two options:
+
+### Option 1: Interactive Wizard (Recommended)
+```bash
+workspace-hub init           # Full interactive setup
+workspace-hub init --quick   # Quick setup
+workspace-hub add            # Add more projects later
+```
+
+### Option 2: Manual Configuration
 
 Edit `config/projects.json`:
 
@@ -49,15 +92,6 @@ Edit `config/projects.json`:
       "command": "npx vite --host 0.0.0.0 --port 3000",
       "port": 3000,
       "domain": "dev-frontend.example.com",
-      "tunnel": false,
-      "enabled": true
-    },
-    {
-      "name": "my-api",
-      "path": "/home/user/dev/my-api",
-      "command": "uvicorn main:app --reload --host 0.0.0.0 --port 3001",
-      "port": 3001,
-      "domain": "dev-api.example.com",
       "tunnel": false,
       "enabled": true
     },
@@ -110,32 +144,41 @@ Edit `config/projects.json`:
 ## Tunnel Setup (ngrok)
 
 ```bash
-# Configure ngrok auth token
-workspace-hub tunnel config YOUR_NGROK_AUTH_TOKEN
+# Option 1: Use the interactive wizard (recommended)
+workspace-hub init
+# Follow the prompts to enter your ngrok token
 
-# Or include it during init
-workspace-hub init --ngrok-token YOUR_NGROK_AUTH_TOKEN
+# Option 2: Configure directly
+workspace-hub tunnel config YOUR_NGROK_AUTH_TOKEN
 
 # Get your free token from: https://dashboard.ngrok.com/get-started/your-authtoken
 ```
 
-Then set `"tunnel": true` in your project config to enable HTTPS via ngrok.
+Then set `"tunnel": true` in your project config (or use the wizard) to enable HTTPS via ngrok.
 
 ## CLI
 
-### Using the workspace-hub CLI:
+### Using workspace-hub CLI:
 
 ```bash
-workspace-hub list              # Show all projects
-workspace-hub start <name>      # Start a project
-workspace-hub start --all       # Start all projects
-workspace-hub stop <name>       # Stop a project
-workspace-hub stop --all        # Stop all projects
-workspace-hub restart <name>    # Restart a project
-workspace-hub logs <name>       # View logs
-workspace-hub dashboard         # Start the dashboard
-workspace-hub generate          # Generate Caddy configs
-workspace-hub init              # Initialize configuration
+# Setup & Configuration
+workspace-hub setup              # Install dependencies (PM2, Caddy, ngrok)
+workspace-hub init               # Interactive setup wizard
+workspace-hub init --quick       # Quick setup with minimal questions
+workspace-hub add                # Add a new project (interactive)
+workspace-hub generate           # Generate Caddy configs
+
+# Project Management
+workspace-hub list               # Show all projects with status
+workspace-hub start <name>       # Start a project
+workspace-hub start --all        # Start all projects
+workspace-hub stop <name>        # Stop a project
+workspace-hub stop --all         # Stop all projects
+workspace-hub restart <name>      # Restart a project
+workspace-hub logs <name>        # View logs
+
+# Dashboard
+workspace-hub dashboard          # Start the dashboard
 
 # Tunnel management (ngrok)
 workspace-hub tunnel start [project]  # Start tunnel for project
@@ -143,6 +186,20 @@ workspace-hub tunnel stop [project]   # Stop tunnel
 workspace-hub tunnel list             # List active tunnels
 workspace-hub tunnel config <token>   # Configure ngrok auth token
 ```
+
+### Interactive Wizard
+
+The `workspace-hub init` command will guide you through:
+
+1. **Dashboard setup**: Domain and port configuration
+2. **Caddy config**: Where to store reverse proxy configs
+3. **ngrok setup**: Auth token for tunnel mode (optional)
+4. **Project configuration**: Add projects with:
+   - Project name and path
+   - Port and access mode (domain or tunnel)
+   - Framework/stack selection (Vite, Next.js, Python, etc.)
+
+The wizard generates everything you need automatically!
 
 ### Using the scripts:
 
@@ -156,15 +213,25 @@ workspace-hub tunnel config <token>   # Configure ngrok auth token
 
 ## How It Works
 
+**Domain Mode:**
 ```
 Internet → Caddy (HTTPS) → Dev Server (localhost)
-                            ↑
-                         PM2 (process manager)
+                          ↑
+                       PM2 (process manager)
 ```
 
-- **Caddy**: Handles HTTPS, auto SSL via Let's Encrypt (installed automatically)
+**Tunnel Mode:**
+```
+Internet → ngrok (HTTPS) → Dev Server (localhost)
+                          ↑
+                       PM2 (process manager)
+```
+
+- **Caddy**: Handles HTTPS with custom domains, auto SSL via Let's Encrypt
+- **ngrok**: Provides HTTPS URLs without domains (optional)
 - **PM2**: Keeps dev servers running, auto-restart on crash
 - **Dashboard**: Web UI to start/stop/view logs
+- **Interactive Wizard**: Guides you through setup configuration
 
 ## License
 
