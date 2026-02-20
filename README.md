@@ -4,10 +4,11 @@ Self-hosted dev environment manager. Keep all your dev servers running with HTTP
 
 ## Quick Start
 
+### Option 1: Install from npm (Recommended)
+
 ```bash
-# 1. Clone
-git clone https://github.com/YOUR_USERNAME/workspace-hub.git
-cd workspace-hub
+# 1. Install globally
+npm install -g workspace-hub
 
 # 2. Interactive setup (guides you through everything)
 workspace-hub init
@@ -17,6 +18,35 @@ workspace-hub start --all
 ```
 
 That's it! The wizard will ask you questions and set everything up automatically.
+
+### Option 2: Clone from GitHub
+
+```bash
+# 1. Clone
+git clone https://github.com/filippo-mancinelli/workspace-hub.git
+cd workspace-hub
+
+# 2. Install dependencies
+npm install
+
+# 3. Link globally (for CLI access)
+npm link
+
+# 4. Interactive setup
+workspace-hub init
+
+# 5. Start everything
+workspace-hub start --all
+```
+
+### Prerequisites
+
+Before installing, make sure you have:
+
+- **Node.js 18+** - Download from [nodejs.org](https://nodejs.org/)
+- **Linux server** (Debian/Ubuntu/RHEL based)
+
+The setup wizard will guide you through installing PM2, Caddy, and optionally ngrok.
 
 ## Getting Started Guide
 
@@ -53,9 +83,14 @@ That's it! The wizard will ask you questions and set everything up automatically
    - Domain mode: `https://your-domain.com`
    - Tunnel mode: Check with `workspace-hub tunnel list`
 
-## Installation (npm)
+## Installation
+
+### npm (Global Install)
+
+The easiest way to install Workspace Hub is via npm:
 
 ```bash
+# Install globally
 npm install -g workspace-hub
 
 # Initialize configuration (interactive wizard)
@@ -66,6 +101,24 @@ workspace-hub start --all
 
 # Start dashboard
 workspace-hub dashboard
+```
+
+### GitHub Clone
+
+Alternatively, clone the repository:
+
+```bash
+git clone https://github.com/filippo-mancinelli/workspace-hub.git
+cd workspace-hub
+
+# Install dependencies
+npm install
+
+# Link globally (for CLI access)
+npm link
+
+# Initialize
+workspace-hub init
 ```
 
 ## Configuration
