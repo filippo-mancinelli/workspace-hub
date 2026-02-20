@@ -13,7 +13,9 @@
   "files": [
     "bin/",
     "src/",
-    "templates/"
+    "templates/",
+    "README.md",
+    "LICENSE"
   ],
   "keywords": [
     "pm2",
@@ -36,5 +38,9 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/filippo-mancinelli/workspace-hub"
+  },
+  "homepage": "https://github.com/filippo-mancinelli/workspace-hub#readme",
+  "bugs": {
+    "url": "https://github.com/filippo-mancinelli/workspace-hub/issues"
   }
 }
