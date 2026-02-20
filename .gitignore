@@ -5,3 +5,4 @@ config/projects.json
 .env
 dashboard/node_modules/
 dashboard/package-lock.json
+*.tgz
