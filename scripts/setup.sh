@@ -42,15 +42,22 @@ else
   echo "PM2: $(pm2 --version)"
 fi
 
-# Check for Traefik/Dokploy
-TRAEFIK_DIR="/etc/dokploy/traefik/dynamic"
-if [ -d "$TRAEFIK_DIR" ]; then
-  echo "Dokploy/Traefik detected at $TRAEFIK_DIR"
+# Install Caddy
+if ! command -v caddy &> /dev/null; then
+  echo "Installing Caddy..."
+  if [ "$PKG_MANAGER" = "apt" ]; then
+    sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+    sudo apt update
+    sudo apt install -y caddy
+  elif [ "$PKG_MANAGER" = "yum" ]; then
+    sudo yum install -y yum-plugin-coreos
+    sudo yum-config-manager --add-repo https://download.caddyserver.com/rpm/caddy.repo
+    sudo yum install -y caddy
+  fi
 else
-  echo ""
-  echo "WARNING: Dokploy/Traefik not detected at $TRAEFIK_DIR"
-  echo "Make sure Traefik is installed and configured."
-  echo "You can override the path in config/projects.json settings.traefikDynamicDir"
+  echo "Caddy: $(caddy version)"
 fi
 
 # Create log directory

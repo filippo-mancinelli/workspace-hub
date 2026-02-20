@@ -21,6 +21,21 @@ nano config/projects.json
 
 Open `https://hub.yourdomain.com` to manage all projects.
 
+## Installation (npm)
+
+```bash
+npm install -g workspace-hub
+
+# Initialize configuration
+workspace-hub init
+
+# Start all projects
+workspace-hub start --all
+
+# Start dashboard
+workspace-hub dashboard
+```
+
 ## Configuration
 
 Edit `config/projects.json`:
@@ -48,7 +63,7 @@ Edit `config/projects.json`:
   "settings": {
     "dashboardPort": 9000,
     "dashboardDomain": "hub.example.com",
-    "traefikDynamicDir": "/etc/dokploy/traefik/dynamic"
+    "caddyConfigDir": "/etc/caddy/conf.d"
   }
 }
 ```
@@ -66,11 +81,29 @@ Edit `config/projects.json`:
 
 ## Requirements
 
-- Linux VPS with Dokploy (or Traefik standalone)
+- Linux server (Debian/Ubuntu/RHEL based)
 - Node.js 18+
-- Domains pointing to your VPS
+- Domains pointing to your server
+- Ports 80 and 443 available (for Caddy HTTPS)
 
 ## CLI
+
+### Using the workspace-hub CLI:
+
+```bash
+workspace-hub list              # Show all projects
+workspace-hub start <name>      # Start a project
+workspace-hub start --all       # Start all projects
+workspace-hub stop <name>       # Stop a project
+workspace-hub stop --all        # Stop all projects
+workspace-hub restart <name>    # Restart a project
+workspace-hub logs <name>       # View logs
+workspace-hub dashboard         # Start the dashboard
+workspace-hub generate          # Generate Caddy configs
+workspace-hub init              # Initialize configuration
+```
+
+### Using the scripts:
 
 ```bash
 ./scripts/manage.sh list           # Show all projects
@@ -83,12 +116,12 @@ Edit `config/projects.json`:
 ## How It Works
 
 ```
-Internet → Traefik (HTTPS) → Dev Server (localhost)
-                              ↑
-                           PM2 (process manager)
+Internet → Caddy (HTTPS) → Dev Server (localhost)
+                            ↑
+                         PM2 (process manager)
 ```
 
-- **Traefik**: Handles HTTPS, auto SSL via Let's Encrypt
+- **Caddy**: Handles HTTPS, auto SSL via Let's Encrypt (installed automatically)
 - **PM2**: Keeps dev servers running, auto-restart on crash
 - **Dashboard**: Web UI to start/stop/view logs
 

@@ -15,11 +15,11 @@ Workspace Hub is a self-hosted development environment manager. Its purpose is t
 
 ## Architecture Decisions
 
-### Reverse Proxy: Traefik (via Dokploy)
-- Already installed and configured via Dokploy
+### Reverse Proxy: Caddy
+- Installed automatically by setup.sh
 - Automatic HTTPS with Let's Encrypt
-- Dynamic configuration via YAML files in /etc/dokploy/traefik/dynamic/
-- Uses Docker gateway IP (172.17.0.1) to reach host services
+- Dynamic configuration via Caddyfiles in /etc/caddy/conf.d/
+- Uses localhost (127.0.0.1) to reach host services
 
 ### Process Manager: PM2
 - Node.js native
@@ -37,7 +37,7 @@ Workspace Hub is a self-hosted development environment manager. Its purpose is t
 ### Config Files
 - `config/projects.json`: User's project definitions
 - `config/projects.example.json`: Template (committed)
-- Traefik configs: Generated in `/etc/dokploy/traefik/dynamic/workspace-hub-*.yml`
+- Caddy configs: Generated in `/etc/caddy/conf.d/workspace-hub-*.caddyfile`
 
 ### Scripts
 - All scripts in `scripts/` directory
@@ -76,7 +76,7 @@ User should edit `config/projects.json`:
 Edit `scripts/manage.sh` or dashboard API endpoints.
 
 ### Update reverse proxy config
-Regenerate with `scripts/generate-traefik.sh` after config changes. Traefik auto-reloads.
+Regenerate with `scripts/generate-caddy.sh` after config changes. Caddy auto-reloads.
 
 ## Error Handling
 

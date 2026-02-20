@@ -406,6 +406,7 @@
       try {
         const res = await fetch('/api/projects');
         projects = await res.json();
+        // Track restarts for crash alerts
         projects.forEach(p => {
           if (restartCounts[p.name] !== undefined && p.restarts > restartCounts[p.name]) {
             showToast(`${p.name} restarted (crashed?)`, 'error');
@@ -494,6 +495,7 @@
           showToast(`Failed to start: ${data.error}`, 'error');
         } else {
           showToast(`Starting ${name}...`, 'info');
+          // Open logs with auto-refresh after starting
           showLogs(name, true);
         }
       } catch (err) {
@@ -552,6 +554,7 @@
       document.getElementById('logsLoading').style.display = 'flex';
       document.getElementById('logsModal').classList.add('active');
 
+      // Enable auto-refresh if requested
       if (autoRefresh) {
         document.getElementById('autoRefreshLogs').checked = true;
         logsInterval = setInterval(() => refreshLogs(), 2000);
@@ -570,6 +573,7 @@
 
     function toggleAutoRefresh() {
       const checked = document.getElementById('autoRefreshLogs').checked;
+      // Clear existing interval first
       if (logsInterval) {
         clearInterval(logsInterval);
         logsInterval = null;
@@ -668,20 +672,25 @@
       };
     }
 
+    // Close modal on escape
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') closeLogs();
     });
 
+    // Initial load
     loadProjects(true);
 
+    // Initialize restart counts after first load to prevent false alerts
     setTimeout(() => {
       projects.forEach(p => {
         restartCounts[p.name] = p.restarts;
       });
     }, 1000);
 
+    // Auto-refresh every 10 seconds (without spinner)
     setInterval(() => loadProjects(false), 10000);
 
+    // Connect SSE for crash alerts
     connectSSE();
   </script>
 </body>

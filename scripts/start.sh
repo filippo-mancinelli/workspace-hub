@@ -20,9 +20,9 @@ const config = require('$CONFIG_FILE');
 console.log(config.settings?.dashboardPort || 9000);
 ")
 
-# Generate Traefik configs
-echo "Generating Traefik configurations..."
-"$SCRIPT_DIR/generate-traefik.sh"
+# Generate Caddy configs
+echo "Generating Caddy configurations..."
+"$SCRIPT_DIR/generate-caddy.sh"
 
 # Start all projects via PM2
 echo "Starting dev servers..."
