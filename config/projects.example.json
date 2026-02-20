@@ -6,6 +6,7 @@
       "command": "npx vite --host 0.0.0.0 --port 3000",
       "port": 3000,
       "domain": "dev-vite.example.com",
+      "tunnel": false,
       "enabled": true,
       "maxMemory": "512M",
       "maxCpu": "50%"
@@ -16,17 +17,19 @@
       "command": "HOSTNAME=0.0.0.0 npx next dev --port 3001",
       "port": 3001,
       "domain": "dev-next.example.com",
+      "tunnel": false,
       "enabled": true,
       "maxMemory": "1G",
       "maxCpu": "100%"
     },
     {
-      "name": "my-fastapi",
-      "path": "/home/YOUR_USER/dev/my-fastapi",
-      "command": "uvicorn main:app --reload --host 0.0.0.0 --port 3002",
+      "name": "my-tunnel-app",
+      "path": "/home/YOUR_USER/dev/my-tunnel-app",
+      "command": "npm run dev -- --port 3002",
       "port": 3002,
-      "domain": "dev-api.example.com",
-      "enabled": false,
+      "domain": "",
+      "tunnel": true,
+      "enabled": true,
       "maxMemory": "256M",
       "maxCpu": "25%"
     }

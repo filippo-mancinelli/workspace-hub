@@ -21,6 +21,7 @@ program
   .command('init')
   .description('Initialize workspace-hub configuration')
   .option('--path <path>', 'Config directory path', CONFIG_DIR)
+  .option('--ngrok-token <token>', 'ngrok auth token for tunnels')
   .action((options) => {
     const configDir = options.path;
     const configPath = path.join(configDir, 'projects.json');
@@ -41,6 +42,12 @@ program
     );
     fs.writeFileSync(configPath, template);
     console.log(`Created config file: ${configPath}`);
+    
+    if (options.ngrokToken) {
+      const { configureAuthToken } = require('../src/lib/tunnel');
+      configureAuthToken(options.ngrokToken);
+    }
+    
     console.log('\nEdit the config file to add your projects, then run:');
     console.log('  workspace-hub start --all');
   });
@@ -138,6 +145,56 @@ program
   .action((options) => {
     const { generateCaddy } = require('../src/lib/caddy');
     generateCaddy(options.output);
+  });
+
+// Tunnel commands
+const tunnelCmd = program.command('tunnel')
+  .description('Manage ngrok tunnels');
+
+tunnelCmd.command('start [project]')
+  .description('Start ngrok tunnel for a project')
+  .action((project) => {
+    const { startTunnel, startProjectTunnels } = require('../src/lib/tunnel');
+    if (project) {
+      startTunnel({ name: project });
+    } else {
+      startProjectTunnels();
+    }
+  });
+
+tunnelCmd.command('stop [project]')
+  .description('Stop ngrok tunnel for a project')
+  .action((project) => {
+    const { stopTunnel, stopAllTunnels } = require('../src/lib/tunnel');
+    if (project) {
+      stopTunnel(project);
+    } else {
+      stopAllTunnels();
+    }
+  });
+
+tunnelCmd.command('list')
+  .description('List all active tunnels')
+  .action(() => {
+    const { listTunnels } = require('../src/lib/tunnel');
+    const tunnels = listTunnels();
+    
+    if (tunnels.length === 0) {
+      console.log('No active tunnels');
+      return;
+    }
+    
+    console.log('Active tunnels:');
+    tunnels.forEach(t => {
+      console.log(`  ${t.name}: ${t.url}`);
+    });
+  });
+
+tunnelCmd.command('config <token>')
+  .description('Configure ngrok auth token')
+  .action((token) => {
+    const { configureAuthToken } = require('../src/lib/tunnel');
+    configureAuthToken(token);
   });
 
 program.parse();

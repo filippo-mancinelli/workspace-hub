@@ -10,8 +10,9 @@ Workspace Hub is a self-hosted development environment manager. Its purpose is t
 
 1. **Simplicity**: Easy to set up on any VPS
 2. **Reliability**: Dev servers stay up and auto-restart
-3. **Accessibility**: HTTPS URLs for all projects
-4. **Visibility**: Dashboard to monitor and control everything
+3. **Accessibility**: HTTPS URLs for all projects (domains or tunnels)
+4. **Portability**: Works on any Linux server without Dokploy dependency
+5. **Visibility**: Dashboard to monitor and control everything
 
 ## Architecture Decisions
 
@@ -20,6 +21,12 @@ Workspace Hub is a self-hosted development environment manager. Its purpose is t
 - Automatic HTTPS with Let's Encrypt
 - Dynamic configuration via Caddyfiles in /etc/caddy/conf.d/
 - Uses localhost (127.0.0.1) to reach host services
+
+### Tunneling: ngrok
+- Optional HTTPS without custom domains
+- Installed automatically by setup.sh
+- Auth token config required (free from ngrok.com)
+- Tunnel URLs generated automatically for projects with `tunnel: true`
 
 ### Process Manager: PM2
 - Node.js native
@@ -60,7 +67,7 @@ Workspace Hub is a self-hosted development environment manager. Its purpose is t
 
 ## Common Tasks
 
-### Add a new project
+### Add a new project with domain
 User should edit `config/projects.json`:
 ```json
 {
@@ -68,7 +75,20 @@ User should edit `config/projects.json`:
   "path": "/absolute/path/to/project",
   "command": "npm run dev",
   "port": 3000,
-  "domain": "project.example.com"
+  "domain": "project.example.com",
+  "tunnel": false
+}
+```
+
+### Add a new project with tunnel (no domain)
+User should edit `config/projects.json`:
+```json
+{
+  "name": "project-name",
+  "path": "/absolute/path/to/project",
+  "command": "npm run dev",
+  "port": 3000,
+  "tunnel": true
 }
 ```
 
@@ -77,6 +97,11 @@ Edit `scripts/manage.sh` or dashboard API endpoints.
 
 ### Update reverse proxy config
 Regenerate with `scripts/generate-caddy.sh` after config changes. Caddy auto-reloads.
+
+### Manage tunnels
+- Use `workspace-hub tunnel start/stop/list` commands
+- Tunnels auto-start with `workspace-hub start --all` if project has `tunnel: true`
+- Configure auth token once: `workspace-hub tunnel config <token>`
 
 ## Error Handling
 

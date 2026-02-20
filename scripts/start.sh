@@ -28,6 +28,18 @@ echo "Generating Caddy configurations..."
 echo "Starting dev servers..."
 "$SCRIPT_DIR/manage.sh" start-all
 
+# Start tunnel processes for projects with tunnel: true
+HAS_TUNNELS=$(node -e "
+const config = require('$CONFIG_FILE');
+const hasTunnels = config.projects.some(p => p.tunnel && p.enabled !== false);
+console.log(hasTunnels ? 'true' : 'false');
+")
+
+if [ "$HAS_TUNNELS" = "true" ]; then
+  echo "Starting ngrok tunnels..."
+  WORKSPACE_HUB_CONFIG="$PROJECT_ROOT/config" node -e "const {startProjectTunnels} = require('$PROJECT_ROOT/src/lib/tunnel'); startProjectTunnels();"
+fi
+
 # Start dashboard
 echo "Starting dashboard on port $DASHBOARD_PORT..."
 cd "$PROJECT_ROOT/dashboard"
@@ -44,4 +56,5 @@ pm2 list
 echo ""
 echo "Dashboard: Check config/projects.json for dashboardDomain"
 echo "Manage: ./scripts/manage.sh list"
+echo "Tunnels: workspace-hub tunnel list"
 echo ""

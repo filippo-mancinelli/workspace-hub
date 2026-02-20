@@ -49,6 +49,7 @@ Edit `config/projects.json`:
       "command": "npx vite --host 0.0.0.0 --port 3000",
       "port": 3000,
       "domain": "dev-frontend.example.com",
+      "tunnel": false,
       "enabled": true
     },
     {
@@ -57,6 +58,16 @@ Edit `config/projects.json`:
       "command": "uvicorn main:app --reload --host 0.0.0.0 --port 3001",
       "port": 3001,
       "domain": "dev-api.example.com",
+      "tunnel": false,
+      "enabled": true
+    },
+    {
+      "name": "my-tunnel-app",
+      "path": "/home/user/dev/my-tunnel-app",
+      "command": "npm run dev -- --port 3002",
+      "port": 3002,
+      "domain": "",
+      "tunnel": true,
       "enabled": true
     }
   ],
@@ -67,6 +78,10 @@ Edit `config/projects.json`:
   }
 }
 ```
+
+**Two access modes:**
+- **Domain mode**: Set `domain` and `tunnel: false` for custom HTTPS domains via Caddy
+- **Tunnel mode**: Set `tunnel: true` for HTTPS URLs via ngrok (no domain needed)
 
 **Important**: Use `--host 0.0.0.0` so Traefik can reach your dev server.
 
@@ -83,8 +98,28 @@ Edit `config/projects.json`:
 
 - Linux server (Debian/Ubuntu/RHEL based)
 - Node.js 18+
+
+**For domain mode:**
 - Domains pointing to your server
 - Ports 80 and 443 available (for Caddy HTTPS)
+
+**For tunnel mode:**
+- ngrok account and auth token (free)
+- No domain required
+
+## Tunnel Setup (ngrok)
+
+```bash
+# Configure ngrok auth token
+workspace-hub tunnel config YOUR_NGROK_AUTH_TOKEN
+
+# Or include it during init
+workspace-hub init --ngrok-token YOUR_NGROK_AUTH_TOKEN
+
+# Get your free token from: https://dashboard.ngrok.com/get-started/your-authtoken
+```
+
+Then set `"tunnel": true` in your project config to enable HTTPS via ngrok.
 
 ## CLI
 
@@ -101,6 +136,12 @@ workspace-hub logs <name>       # View logs
 workspace-hub dashboard         # Start the dashboard
 workspace-hub generate          # Generate Caddy configs
 workspace-hub init              # Initialize configuration
+
+# Tunnel management (ngrok)
+workspace-hub tunnel start [project]  # Start tunnel for project
+workspace-hub tunnel stop [project]   # Stop tunnel
+workspace-hub tunnel list             # List active tunnels
+workspace-hub tunnel config <token>   # Configure ngrok auth token
 ```
 
 ### Using the scripts:
