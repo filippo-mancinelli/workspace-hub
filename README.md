@@ -194,6 +194,30 @@ Edit `config/projects.json`:
 - ngrok account and auth token (free)
 - No domain required
 
+### Permissions
+
+Most Workspace Hub commands don't require sudo, but some operations need elevated privileges:
+
+**Commands that need sudo:**
+```bash
+sudo workspace-hub generate    # Writes Caddy configs to /etc/caddy
+sudo workspace-hub setup        # Installs system packages
+```
+
+**Commands that don't need sudo:**
+```bash
+workspace-hub init             # Creates user config
+workspace-hub add              # Adds projects to config
+workspace-hub start --all      # Starts PM2 processes
+workspace-hub list             # Shows project status
+workspace-hub tunnel list       # Lists tunnels
+```
+
+**Tip:** When using sudo for commands that need your config file, set the config path:
+```bash
+sudo -E workspace-hub generate
+```
+
 ## Tunnel Setup (ngrok)
 
 ```bash
