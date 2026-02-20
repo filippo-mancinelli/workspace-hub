@@ -73,7 +73,39 @@ async function wizardInit() {
   }
 
   rl.close();
+  showConfigSummary(config);
   return config;
+}
+
+function showConfigSummary(config) {
+  console.log('\n📋 Configuration Summary\n');
+  
+  console.log('Settings:');
+  console.log(`  Dashboard port: ${config.settings.dashboardPort}`);
+  if (config.settings.dashboardDomain) {
+    console.log(`  Dashboard URL: https://${config.settings.dashboardDomain}`);
+  } else {
+    console.log(`  Dashboard URL: http://localhost:${config.settings.dashboardPort}`);
+  }
+  console.log(`  Caddy dir: ${config.settings.caddyConfigDir}`);
+  console.log(`  ngrok: ${config.settings.ngrokToken ? 'configured ✓' : 'not configured'}`);
+  
+  if (config.projects.length > 0) {
+    console.log(`\nProjects (${config.projects.length}):`);
+    config.projects.forEach(p => {
+      const mode = p.tunnel ? '🔗 Tunnel' : `🌐 ${p.domain}`;
+      console.log(`  - ${p.name} (port ${p.port}) [${mode}]`);
+    });
+  }
+  
+  console.log('\n🚀 Next steps:');
+  console.log('  1. Run: workspace-hub start --all');
+  if (config.projects.length === 0) {
+    console.log('  2. Add projects: workspace-hub add');
+  } else {
+    console.log('  2. Access your projects!');
+  }
+  console.log('');
 }
 
 async function wizardAddProject(rl) {
@@ -160,6 +192,7 @@ async function wizardQuickSetup() {
   }
 
   rl.close();
+  showConfigSummary(config);
   return config;
 }
 

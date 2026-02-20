@@ -48,20 +48,11 @@ program
     }
     
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-    console.log(`\n✓ Created config file: ${configPath}`);
     
     if (config.settings.ngrokToken) {
       const { configureAuthToken } = require('../src/lib/tunnel');
       configureAuthToken(config.settings.ngrokToken);
     }
-    
-    console.log('\n🚀 Next steps:');
-    console.log('  1. Run: workspace-hub start --all');
-    console.log('  2. Add more projects: workspace-hub add');
-    if (config.projects.length > 0) {
-      console.log(`  3. Access your ${config.projects.length} project(s)!`);
-    }
-    console.log('');
   });
 
 // Add command
@@ -86,6 +77,10 @@ program
     
     console.log(`\n✓ Added project: ${project.name}`);
     console.log(`  Run: workspace-hub generate && workspace-hub start ${project.name}`);
+    
+    // Show brief summary
+    console.log(`\nProjects in config: ${config.projects.length}`);
+    
     rl.close();
   });
 
